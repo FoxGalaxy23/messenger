@@ -1,0 +1,438 @@
+:root {
+    --tg-blue: #007AFF; /* Основной цвет (Telegram Blue) */
+    --bg-light: #f6f6f6; /* Светлый фон */
+    --bg-darker: #e5e5e5; /* Фон для инпута */
+    --bubble-self: #D9F7C5; /* Цвет своего сообщения (легкий зеленый - НЕ ИСПОЛЬЗУЕТСЯ в финальной версии, но оставлен в переменной) */
+    --bubble-other: #FFFFFF; /* Цвет чужого сообщения (белый) */
+    --text-dark: #202020;
+    --text-meta: #888888;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-light); 
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    color: var(--text-dark);
+}
+
+/*
+======================================
+ШАПКА ЧАТА (HEADER)
+======================================
+*/
+.chat-header {
+    background-color: var(--tg-blue);
+    color: white;
+    padding: 12px 16px; 
+    box-shadow: 0 0.5px 0.5px rgba(0,0,0,0.2); /* Легкая тень */
+    flex-shrink: 0; /* Не сжимается */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; /* Добавлено, но лучше использовать flex-layout */
+    top: 0;
+    z-index: 10; /* На всякий случай */
+}
+.chat-header h1 {
+    margin: 0;
+    font-size: 1.15em; 
+    font-weight: 600; /* Полужирный */
+}
+.chat-header a {
+    color: white;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 400;
+    transition: opacity 0.2s;
+}
+.chat-header a:hover {
+    opacity: 0.8;
+}
+/*
+======================================
+ОБЛАСТЬ СООБЩЕНИЙ
+======================================
+*/
+#messages-display { 
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px 15px; 
+    display: flex;
+    flex-direction: column;
+    /* Убираем текстуру для чистого минимализма */
+    background-color: var(--bg-light);
+}
+
+/*
+======================================
+СТИЛИ СООБЩЕНИЙ (ОБЛАЧКА)
+======================================
+*/
+.message { 
+    display: flex;
+    margin-bottom: 6px; /* Меньше отступ */
+    max-width: 80%; /* Еще чуть меньше, чтобы оставить место */
+}
+
+.message-content {
+    padding: 8px 12px; /* Уменьшаем отступ внутри */
+    border-radius: 14px; /* Более мягкое скругление для "облачка" */
+    line-height: 1.4;
+    word-wrap: break-word;
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13); /* Очень легкая тень */
+    position: relative;
+}
+
+/* СООБЩЕНИЯ ДРУГИХ (слева) */
+.message.other {
+    justify-content: flex-start;
+}
+.message.other .message-content {
+    background-color: var(--bubble-other); 
+    color: var(--text-dark);
+    border-bottom-left-radius: 3px; /* Острый угол внизу слева */
+}
+
+/* СВОИ СООБЩЕНИЯ (справа) */
+.message.self {
+    justify-content: flex-end;
+    margin-left: auto;
+}
+.message.self .message-content {
+    background-color: var(--tg-blue); /* Используем цвет шапки, как в Telegram */
+    color: white;
+    border-bottom-right-radius: 3px; /* Острый угол внизу справа */
+}
+
+/* Метаданные (Имя/Время) */
+.msg-meta {
+    display: block;
+    font-size: 0.7em;
+    margin-top: 2px; /* Отделяем от текста сообщения */
+    text-align: right;
+    opacity: 0.9;
+    color: var(--text-meta);
+}
+
+/* Время в своих сообщениях (должно быть светлым) */
+.message.self .msg-meta {
+    color: rgba(255, 255, 255, 0.8);
+}
+.message.other .msg-meta {
+    /* Имя отправителя в чужих сообщениях */
+    color: var(--text-dark); 
+}
+
+
+/*
+======================================
+СЕКЦИЯ ВВОДА
+======================================
+*/
+.chat-input-area {
+    padding: 8px 15px 12px; /* Увеличил нижний отступ для мобильных устройств */
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-input); /* Фон белый */
+    flex-shrink: 0; /* Не сжимается */
+    position: sticky; /* Добавлено, но лучше использовать flex-layout */
+    bottom: 0;
+    z-index: 10;
+}
+#chat-form {
+    display: flex;
+    align-items: flex-end; /* Выравнивание по нижнему краю */
+}
+#message-input { 
+    flex-grow: 1;
+    min-height: 20px;
+    max-height: 80px; /* Немного уменьшил максимальную высоту */
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    margin-right: 10px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: white;
+    resize: none;
+    font-size: 1em;
+}
+#message-input:focus {
+    border-color: var(--tg-blue);
+    box-shadow: 0 0 0 1px var(--tg-blue);
+}
+/* Скрываем скроллбар для textarea, если она становится большой */
+#message-input::-webkit-scrollbar {
+    width: 0px; 
+    background: transparent; 
+}
+
+#chat-form button[type="submit"] {
+    width: 44px; /* Чуть больше */
+    height: 44px;
+    padding: 0;
+    background-color: var(--tg-blue);
+    color: white;
+    border: none;
+    border-radius: 50%; 
+    cursor: pointer;
+    font-size: 1.8em; /* Иконка побольше */
+    font-weight: 500;
+    line-height: 44px;
+    text-align: center;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /* Замена символа на более универсальный значок "отправить" */
+    content: '▶';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#chat-form button[type="submit"]:hover {
+    background-color: #0066d4;
+}
+#chat-form button[type="submit"]:active {
+    transform: scale(0.95);
+}
+
+/*
+======================================
+АДАПТИВНОСТЬ (Mobile-First)
+======================================
+*/
+/* На экранах > 600px немного увеличим элементы для ПК */
+@media (min-width: 600px) {
+    .chat-header {
+        padding: 15px 25px; 
+    }
+
+    .message {
+        max-width: 55%; /* Уменьшаем на больших экранах */
+    }
+    
+    #messages-display {
+        padding: 15px 25px; 
+    }
+
+    .chat-input-area {
+        padding: 12px 25px 15px; 
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --tg-blue: #3391ff;
+        --bg-light: #181a20;
+        --bg-darker: #23262f;
+        --bubble-self: #2c3e2f;
+        --bubble-other: #23262f;
+        --text-dark: #eaeaea;
+        --text-meta: #a0a0a0;
+        --border-color: #333a45;
+        --bg-input: #23262f;
+    }
+    body {
+        background-color: var(--bg-light);
+        color: var(--text-dark);
+    }
+    .chat-header {
+        background-color: var(--tg-blue);
+        color: white;
+    }
+    #messages-display {
+        background-color: var(--bg-light);
+    }
+    .message.other .message-content {
+        background-color: var(--bubble-other);
+        color: var(--text-dark);
+    }
+    .message.self .message-content {
+        background-color: var(--tg-blue);
+        color: white;
+    }
+    .chat-input-area {
+        background-color: var(--bg-input) !important;
+    }
+    #message-input {
+        background-color: var(--bg-darker);
+        color: var(--text-dark);
+        border-color: var(--border-color);
+    }
+    #message-input:focus {
+        border-color: var(--tg-blue);
+        box-shadow: 0 0 0 1px var(--tg-blue);
+    }
+}
+
+/*
+======================================
+СТИЛИ СТРАНИЦЫ ВЫБОРА ЧАТА (select_chat.php)
+======================================
+*/
+.selection-container {
+    padding: 20px;
+    max-width: 500px; /* Ограничиваем ширину для лучшего вида на больших экранах */
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box; /* Включаем padding в ширину */
+}
+
+.selection-container h2,
+.selection-container h3 {
+    color: var(--text-dark);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.selection-container h3 {
+    font-size: 1.1em;
+    font-weight: 400;
+    color: var(--text-meta);
+    margin-bottom: 20px;
+}
+
+.chat-actions {
+    margin-bottom: 25px;
+    border-top: 1px solid var(--bg-darker); /* Легкая линия */
+    padding-top: 15px;
+}
+
+.chat-actions p {
+    margin: 8px 0;
+}
+
+.action-link {
+    color: var(--tg-blue) !important;
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    display: inline-block;
+    padding: 5px 0;
+}
+
+.action-link:hover {
+    opacity: 0.7;
+}
+
+.logout-link {
+    color: #cc0000 !important; /* Красный цвет для "Выйти" */
+}
+
+/* Список комнат */
+.chat-list {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+}
+
+.chat-list li {
+    margin-bottom: 1px;
+    border-bottom: 1px solid var(--bg-darker);
+}
+
+.chat-list li:last-child {
+    border-bottom: none;
+}
+
+.chat-link {
+    display: block;
+    padding: 12px 0;
+    text-decoration: none;
+    color: var(--text-dark);
+    font-size: 1.05em;
+    transition: background-color 0.15s;
+    font-weight: 400;
+}
+
+.chat-link:hover {
+    background-color: var(--bg-darker);
+    padding-left: 5px;
+}
+
+/* Стили для темного режима */
+@media (prefers-color-scheme: dark) {
+    .logout-link {
+        color: #ff5555 !important;
+    }
+}
+
+/*
+======================================
+СТИЛИ ФОРМ (make_chat.php)
+======================================
+*/
+.form-style {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Отступы между элементами формы */
+    padding: 15px 0;
+}
+
+.form-style label {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--text-meta);
+}
+
+.form-style input[type="text"] {
+    padding: 10px 12px;
+    border: 1px solid var(--bg-darker);
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: var(--bubble-other); /* Светлый фон */
+    color: var(--text-dark);
+    outline: none;
+}
+
+.form-style input[type="text"]:focus {
+    border-color: var(--tg-blue);
+    box-shadow: 0 0 0 1px var(--tg-blue);
+}
+
+.submit-button {
+    padding: 12px;
+    background-color: var(--tg-blue);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: background-color 0.2s, transform 0.1s;
+    margin-top: 10px; /* Отступ от поля ввода */
+}
+
+.submit-button:hover {
+    background-color: #0066d4;
+}
+
+.submit-button:active {
+    transform: scale(0.99);
+}
+
+.error-message {
+    color: #cc0000;
+    font-weight: 500;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+.back-link-area {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--bg-darker);
+}
+
+/* Стили для темного режима */
+@media (prefers-color-scheme: dark) {
+    .form-style input[type="text"] {
+        background-color: var(--bg-darker);
+        border-color: var(--border-color);
+        color: var(--text-dark);
+    }
+    .error-message {
+        color: #ff5555;
+    }
+}
