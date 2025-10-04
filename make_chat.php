@@ -12,7 +12,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sql = "INSERT INTO chats (chat_name) VALUES ('$chat_name')";
         
         if ($conn->query($sql) === TRUE) {
-            header("Location: select_chat.php"); 
+            header("Location: index.php"); 
             exit();
         } else {
             $error = "Ошибка при создании комнаты. Возможно, название слишком длинное или занято.";
@@ -47,7 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <button type="submit" class="submit-button">Create</button>
         </form>
 
-        <p class="back-link-area"><a href="select_chat.php" class="action-link">Back to chat selection</a></p>
+        <p class="back-link-area"><a href="index.php" class="action-link">Back to chat selection</a></p>
     </div>
 </body>
 </html>

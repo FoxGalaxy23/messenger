@@ -272,8 +272,8 @@ body {
 */
 .selection-container {
     padding: 20px;
-    max-width: 500px; /* Ограничиваем ширину для лучшего вида на больших экранах */
-    margin: 0 auto;
+    /* max-width: 500px;
+    margin: 0 auto; */
     width: 100%;
     box-sizing: border-box; /* Включаем padding в ширину */
 }
@@ -347,7 +347,7 @@ body {
 
 .chat-link:hover {
     background-color: var(--bg-darker);
-    padding-left: 5px;
+    /* padding-left: 5px; */
 }
 
 /* Стили для темного режима */
@@ -408,10 +408,6 @@ body {
     background-color: #0066d4;
 }
 
-.submit-button:active {
-    transform: scale(0.99);
-}
-
 .error-message {
     color: #cc0000;
     font-weight: 500;
@@ -436,3 +432,223 @@ body {
         color: #ff5555;
     }
 }
+
+/* Аватарка */
+.message-avatar {
+    width: 35px; /* Размер аватарки */
+    height: 35px;
+    border-radius: 50%; /* Делаем круглой */
+    object-fit: cover;
+    flex-shrink: 0; 
+}
+
+/* Общий контейнер сообщения */
+.message {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: flex-end; /* Ключевое изменение: Прижимает аватарку к нижнему краю сообщения */
+    max-width: 100%;
+}
+
+/* Контейнер для текста и имени (позволяет ограничить ширину и держать имя над облачком) */
+.message-content-box {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%; 
+}
+
+/* Стили для чужих сообщений (слева) */
+.message.other {
+    justify-content: flex-start;
+}
+.message.other .message-avatar {
+    margin-right: 8px; /* Отступ справа от аватарки */
+}
+.message.other .message-bubble {
+    /* Облачко слева: закругление внизу слева меньше */
+    border-radius: 18px 18px 18px 4px; 
+}
+
+
+/* Стили для своих сообщений (справа) */
+.message.self {
+    justify-content: flex-end;
+}
+.message.self .message-avatar {
+    margin-left: 8px; /* Отступ слева от аватарки */
+}
+.message.self .message-content-box {
+    align-items: flex-end; /* Выравниваем имя и облачко вправо */
+}
+.message.self .message-bubble {
+     /* Облачко справа: закругление внизу справа меньше */
+    border-radius: 18px 18px 4px 18px; 
+}
+
+
+/* Стиль для имени пользователя (только для чужих, над облачком) */
+.msg-username {
+    font-weight: bold;
+    font-size: 0.85em;
+    color: #ffffff; 
+    margin-bottom: 2px;
+    padding: 0 10px; 
+    align-self: flex-start; /* Имя чужого пользователя выравнивается влево */
+}
+.message.self .msg-username {
+    align-self: flex-end; /* Имя своего пользователя выравнивается вправо (хотя оно скрыто) */
+}
+
+
+/* САМО ОБЛАЧКО (текст и время внутри) */
+.message-bubble {
+    background-color: #007bff; /* Светлый фон для чужих */
+    padding: 8px 12px;
+    word-wrap: break-word;
+    margin: 0; 
+}
+.message.self .message-bubble {
+    background-color: #007bff; /* Синий фон для своих */
+    color: white;
+}
+
+/* Текст сообщения внутри облачка */
+.msg-text {
+    margin: 0 0 5px 0; /* Отступ от текста до времени */
+    padding: 0;
+    line-height: 1.4;
+}
+
+/* Мета-информация (время) */
+.msg-meta {
+    display: block;
+    text-align: right;
+    font-size: 0.7em;
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 1.2em; /* расстояние между аватаркой и текстом */
+}
+
+.chat-header-avatar {
+    width: 5vh;
+    height: 5vh;
+    border-radius: 20%;
+    object-fit: cover;
+    vertical-align: middle;
+    margin-right: 0.7em; /* дополнительный отступ справа */
+}
+
+.chat-header h1 {
+    display: flex;
+    align-items: center;
+    font-size: 1.5em;
+    margin: 0;
+    padding: 0;
+}
+
+.chat-media-image{
+    max-width: 256px;
+    max-height: 256px;
+    border-radius: 14px;
+}
+
+.invite-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.47);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+.invite-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    object-fit: cover;
+}
+.invite-name {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+.invite-count {
+    color: #666;
+    margin-bottom: 20px;
+}
+.join-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+.join-button:hover {
+    background-color: #0056b3;
+}
+.back-link {
+    display: block;
+    margin-top: 15px;
+    color: #007bff;
+    text-decoration: none;
+}
+.error {
+    color: red;
+    margin-top: 10px;
+}
+
+        .chat-form {
+    /* Эта строка центрирует весь текст и ссылки по горизонтали */
+    text-align: center;
+}
+
+/* === НОВЫЕ/ИЗМЕНЕННЫЕ СТИЛИ ДЛЯ ЗАКРЕПЛЕНИЯ ФОРМЫ ВНИЗУ === */
+
+/* Устанавливаем минимальную высоту для <body>, чтобы элементы 
+   корректно позиционировались относительно всего экрана */
+body {
+    min-height: 100vh;
+    margin: 0; /* Убираем стандартные отступы */
+    padding-bottom: 70px; /* Добавляем нижний отступ, равный высоте 
+                             фиксированного блока, чтобы контент не перекрывался */
+}
+
+/* Стили для фиксированного нижнего меню */
+.chat-input-area {
+    position: fixed; /* Закрепляем блок на экране */
+    bottom: 0;       /* Прижимаем к нижнему краю */
+    left: 0;         /* Прижимаем к левому краю */
+    width: 100%;     /* Растягиваем на всю ширину */
+    background: white; 
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* Добавляем тень сверху для отделения */
+    padding: 10px 0; /* Немного вертикального отступа */
+    z-index: 1000;   /* Гарантируем, что будет поверх остального контента */
+}
+
+/* Стили для самой формы внутри фиксированного блока */
+#chat-form.chat-form {
+    display: flex; 
+    align-items: center;
+    justify-content: space-around; /* Центрируем и распределяем ссылки по горизонтали */
+    margin: 0; /* Убираем внешние отступы */
+    width: 100%;
+    height: 100%; /* Занимает всю высоту родительского блока */
+}
+
+/* Изменения в стилях для ссылок внутри фиксированного блока */
+.centered-action {
+    /* Делаем так, чтобы содержимое (ссылка) выравнивалось по центру блока <p> */
+    text-align: center; 
+    /* Убираем width: 100%; для корректного горизонтального размещения */
+    flex-grow: 1; /* Позволяет элементам занимать равное пространство */
+    margin: 0; /* Убираем внешние отступы */
+}
+
+/* ============================================================= */

@@ -1,37 +1,91 @@
 <?php
-include 'db_connect.php'; 
-check_login();
+header('Content-Type: application/json');
 
-$chat_id = isset($_GET['chat_id']) ? (int)$_GET['chat_id'] : 0;
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Not logged in.']);
+    exit();
+}
 
-if ($chat_id > 0) {
-    $sql = "SELECT m.id, m.user_id, m.message, m.post_date, u.username 
-            FROM messages m 
-            JOIN users u ON m.user_id = u.user_id
-            WHERE m.chat_id = $chat_id
-            ORDER BY m.id ASC LIMIT 20";
-            
-    $result = $conn->query($sql);
-    $messages = [];
+include 'db_connect.php';
 
-    if ($result->num_rows > 0) {
-        while($row = $result->fetch_assoc()) {
-            $messages[] = [
-                'message_id' => $row["id"],
-                'user_id' => $row["user_id"], 
-                'username' => htmlspecialchars($row["username"]),
-                'message' => htmlspecialchars($row["message"]),
-                'time' => date("H:i", strtotime($row["post_date"]))
-            ];
+if (!isset($_GET['chat_id']) || !is_numeric($_GET['chat_id'])) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid chat ID.']);
+    exit();
+}
+
+$chat_id = (int)$_GET['chat_id'];
+
+$sql_messages = "
+    SELECT 
+        m.id AS message_id, 
+        m.user_id, 
+        m.message, 
+        u.username, 
+        u.avatar_url, 
+        DATE_FORMAT(m.post_date, '%H:%i') AS time
+    FROM messages m
+    JOIN users u ON m.user_id = u.user_id
+    WHERE m.chat_id = ?
+    ORDER BY m.post_date ASC
+";
+
+$stmt_messages = $conn->prepare($sql_messages);
+$stmt_messages->bind_param("i", $chat_id);
+$stmt_messages->execute();
+$result_messages = $stmt_messages->get_result();
+$messages = [];
+$message_ids = [];
+
+if ($result_messages) {
+    while ($row = $result_messages->fetch_assoc()) {
+        $message_id = $row['message_id'];
+        $messages[$message_id] = $row;
+        $messages[$message_id]['media'] = [];
+        $message_ids[] = $message_id;
+    }
+} else {
+    error_log("SQL Error: " . $conn->error);
+}
+
+if (!empty($message_ids)) {
+    $ids_string = implode(',', array_fill(0, count($message_ids), '?'));
+    $sql_media = "
+        SELECT 
+            message_id, 
+            file_path, 
+            file_type 
+        FROM 
+            message_media 
+        WHERE 
+            message_id IN ($ids_string) AND is_deleted = 0
+    ";
+    
+    $stmt_media = $conn->prepare($sql_media);
+
+    $types = str_repeat('i', count($message_ids));
+    $stmt_media->bind_param($types, ...$message_ids);
+    $stmt_media->execute();
+    $result_media = $stmt_media->get_result();
+
+    if ($result_media) {
+        while ($media_row = $result_media->fetch_assoc()) {
+            $msg_id = $media_row['message_id'];
+            if (isset($messages[$msg_id])) {
+                $messages[$msg_id]['media'][] = [
+                    'path' => htmlspecialchars($media_row['file_path']),
+                    'type' => htmlspecialchars($media_row['file_type'])
+                ];
+            }
         }
     }
-    
-    header('Content-Type: application/json');
-    echo json_encode($messages);
-} else {
-    header('Content-Type: application/json');
-    echo json_encode([]);
 }
 
 $conn->close();
+
+echo json_encode(array_values($messages));
 ?>
