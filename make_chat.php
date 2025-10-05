@@ -1,8 +1,25 @@
 <?php
-include 'components/php/db_connect.php'; 
+include 'components/php/db_connect.php';
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+if (!function_exists('check_login')) {
+    function check_login() {
+        if (!isset($_SESSION['user_id'])) {
+            header("Location: login.php");
+            exit();
+        }
+    }
+}
 check_login(); 
 
 $error = ''; 
+$success_message = '';
 $current_user_id = $_SESSION['user_id']; 
 $target_dir = "uploads/chat_avatars/"; 
 $default_avatar_url = 'components/media/images/chat.png';
@@ -31,57 +48,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
             $uploadOk = 1;
 
             $check = getimagesize($_FILES["chat_avatar"]["tmp_name"]);
-            if($check === false) {
-                $error = "Файл не является изображением.";
+            if ($check === false) {
+                $error = "Загруженный файл не является изображением.";
                 $uploadOk = 0;
             }
 
-            if ($_FILES["chat_avatar"]["size"] > 5000000) { 
-                $error = "Извините, ваш файл слишком большой.";
+            if ($_FILES["chat_avatar"]["size"] > 500000) {
+                $error = "Размер файла слишком большой (макс. 500KB).";
                 $uploadOk = 0;
             }
 
-            if($file_extension != "jpg" && $file_extension != "png" && $file_extension != "jpeg"
-            && $file_extension != "gif" ) {
+            if ($file_extension != "jpg" && $file_extension != "png" && $file_extension != "jpeg" && $file_extension != "gif") {
                 $error = "Разрешены только JPG, JPEG, PNG и GIF файлы.";
                 $uploadOk = 0;
             }
 
-            if ($uploadOk) {
+            if ($uploadOk == 1) {
                 if (move_uploaded_file($_FILES["chat_avatar"]["tmp_name"], $target_file)) {
                     $avatar_url = $target_file;
                 } else {
-                    $error = "Извините, произошла ошибка при загрузке файла. Возможно, нет прав записи.";
+                    $error = "Ошибка при загрузке файла.";
                 }
             }
         }
+        
         if (empty($error)) {
+            $sql_check_name = "SELECT chat_id FROM chats WHERE chat_name = ?";
+            $stmt_check = $conn->prepare($sql_check_name);
+            $stmt_check->bind_param("s", $chat_name);
+            $stmt_check->execute();
+            $stmt_check->store_result();
             
-            $sql = "INSERT INTO chats (chat_name, avatar_url) VALUES (?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ss", $chat_name, $avatar_url);
-            
-            if ($stmt->execute()) {
+            if ($stmt_check->num_rows == 0) {
+                $stmt_check->close();
+
+                $sql_insert_chat = "INSERT INTO chats (chat_name, avatar_url) VALUES (?, ?)";
+                $stmt_insert_chat = $conn->prepare($sql_insert_chat);
+                $stmt_insert_chat->bind_param("ss", $chat_name, $avatar_url);
                 
-                $new_chat_id = $conn->insert_id; 
-                $stmt->close();
-                
-                $sql_subscribe = "INSERT INTO user_chats (user_id, chat_id) VALUES (?, ?)";
-                $stmt_subscribe = $conn->prepare($sql_subscribe);
-                $stmt_subscribe->bind_param("ii", $current_user_id, $new_chat_id);
-                
-                if ($stmt_subscribe->execute()) {
-                    echo "<script>window.top.location.reload();</script>";
-                    exit();
+                if ($stmt_insert_chat->execute()) {
+                    $new_chat_id = $conn->insert_id; 
+                    $stmt_insert_chat->close();
+
+                    $sql_add_user_admin = "INSERT INTO user_chats (user_id, chat_id, is_admin) VALUES (?, ?, 1)";
+                    $stmt_user = $conn->prepare($sql_add_user_admin);
+
+                    if ($stmt_user === false) {
+                         $error = "Ошибка сервера: Не удалось подготовить запрос для установки прав администратора. Возможно, в таблице user_chats отсутствует столбец is_admin.";
+                    } else {
+                        $stmt_user->bind_param("ii", $current_user_id, $new_chat_id);
+                        if ($stmt_user->execute()) {
+                            $success_message = "Чат '$chat_name' успешно создан. Вы назначены администратором.";
+                            header("Location: chat.php?chat_id={$new_chat_id}");
+                            exit();
+
+                        } else {
+                            $error = "Ошибка при добавлении создателя в чат.";
+                        }
+                        $stmt_user->close();
+                    }
                 } else {
-                    $error = "Ошибка при добавлении в комнату. Попробуйте еще раз.";
+                    $error = "Ошибка базы данных при создании чата: " . $conn->error;
                 }
 
-                $stmt_subscribe->close();
-
             } else {
-                $error = "Ошибка при создании комнаты. Возможно, название слишком длинное или занято.";
-                $stmt->close();
+                $error = "Название комнаты занято.";
+                $stmt_check->close();
             }
         }
     } else {
@@ -94,7 +126,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New chat</title>
+    <title>Новый чат</title>
     <link rel="stylesheet" href="components/css/style.css"> 
     <script>
         if (window.self === window.top) {
@@ -104,25 +136,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
 </head>
 <body>
     <header class="chat-header">
-        <h1>New chat</h1>
+        <h1>Создание чата</h1>
     </header>
     <div class="selection-container">
-        <h2>Create a new chat room</h2>
-        <h3>Come up with a unique name and set an avatar</h3>
+        <h2>Создать новую комнату</h2>
+        <h3>Придумайте уникальное имя и задайте аватар</h3>
 
         <?php if (!empty($error)) echo "<p class='error-message'>$error</p>"; ?>
 
         <form method="POST" class="form-style" enctype="multipart/form-data"> 
-            <label for="chat_name">Chat room name:</label>
-            <input type="text" id="chat_name" name="chat_name" required placeholder="For example, 'General Questions'"><br>
+            <label for="chat_name">Название чата:</label>
+            <input type="text" id="chat_name" name="chat_name" required placeholder="Например, 'Общие вопросы'"><br>
             
-            <label for="chat_avatar">Chat avatar (optional):</label>
+            <label for="chat_avatar">Аватар чата (необязательно):</label>
             <input type="file" id="chat_avatar" name="chat_avatar" accept="image/*"><br>
 
-            <button type="submit" class="submit-button">Create</button>
+            <button type="submit" class="button-style">Создать чат</button>
         </form>
-
-        <p class="back-link-area"><a href="index.php" class="action-link">Back to chat selection</a></p>
     </div>
 </body>
 </html>

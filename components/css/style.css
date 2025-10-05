@@ -255,7 +255,7 @@ body {
 
 .chat-actions {
     margin-bottom: 25px;
-    border-top: 1px solid var(--bg-darker); /* Легкая линия */
+    border-top: 0px solid var(--bg-darker); /* Легкая линия */
     padding-top: 15px;
 }
 
@@ -379,7 +379,7 @@ body {
 .back-link-area {
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid var(--bg-darker);
+    border-top: 0px solid var(--bg-darker);
 }
 
 /* Стили для темного режима */

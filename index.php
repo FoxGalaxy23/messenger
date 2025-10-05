@@ -36,6 +36,7 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" type="text/css" href="components/css/index.css">
     <meta name="description" content="<?php echo $description; ?>">
+    <link rel="stylesheet" type="text/css" href="components/css/context.css">
 </head>
 <body>
 
@@ -62,7 +63,7 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
                     
                     $active_class = $initial_chat_id == $chat_id ? ' active' : '';
                     
-                    echo "<li>";
+                    echo "<li class='chat-list-item' data-chat-id='{$chat_id}'>";
                     echo "<a href='#' data-chat-id='{$chat_id}' data-chat-url='chat.php?chat_id={$chat_id}' class='chat-link chat-item rounded-lg mx-2 my-1{$active_class}'>"; 
                     echo "<img src='{$avatar_url}' alt='Аватар чата {$chat_name}' class='chat-list-avatar rounded-full shadow-sm'>"; 
                     echo "<span class='chat-name-text'>{$chat_name}</span>";
@@ -70,7 +71,7 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
                 }
                 echo "</ul>";
             } else {
-                echo "<p class='p-4 text-center text-gray-500'>У вас пока нет чатов.</p>";
+                echo "<p id='noChatsMessage' class='p-4 text-center text-gray-500'>У вас пока нет чатов.</p>";
             }
             ?>
         </div>
@@ -116,9 +117,15 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
     
 </div>
 
+<!-- Контекстное меню -->
+<div id="contextMenu" class="context-menu">
+    <div id="unsubscribeItem" class="context-menu-item danger">Отписаться</div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const chatLinks = document.querySelectorAll('.chat-link');
+        const chatListItems = document.querySelectorAll('.chat-list-item');
         const navLinks = document.querySelectorAll('.nav-link');
         const chatIframe = document.getElementById('chatIframe');
         const placeholder = document.getElementById('welcomePlaceholder');
@@ -126,11 +133,16 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
         const chatSidebar = document.getElementById('chatSidebar');
         const bottomNav = document.getElementById('bottomNav'); 
         const mediaQuery = window.matchMedia('(min-width: 768px)');
+        const contextMenu = document.getElementById('contextMenu');
+        const unsubscribeItem = document.getElementById('unsubscribeItem');
+        const noChatsMessage = document.getElementById('noChatsMessage');
+        const chatListContainer = document.querySelector('.chat-list');
 
         let activeChatId = null;
+        let contextMenuChatId = null;
 
         /**
-         *
+         * 
          * @param {string} url
          * @param {string|null} [chatId=null]
          */
@@ -139,7 +151,7 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
             placeholder.classList.add('hidden');
             chatIframe.style.display = 'block';
             
-            chatLinks.forEach(link => {
+            document.querySelectorAll('.chat-link').forEach(link => {
                 link.classList.remove('active');
             });
             activeChatId = chatId;
@@ -160,8 +172,13 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
                 bottomNav.style.display = 'none';
             }
         }
+        
+        function hideContextMenu() {
+            contextMenu.style.display = 'none';
+            contextMenuChatId = null;
+        }
 
-        chatLinks.forEach(link => {
+        document.querySelectorAll('.chat-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const chatUrl = link.getAttribute('data-chat-url');
@@ -181,6 +198,77 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
             });
         });
 
+        document.addEventListener('contextmenu', (e) => {
+            const chatListItem = e.target.closest('.chat-list-item');
+            if (chatListItem) {
+                e.preventDefault(); 
+                
+                contextMenuChatId = chatListItem.getAttribute('data-chat-id');
+                
+                contextMenu.style.left = `${e.clientX}px`;
+                contextMenu.style.top = `${e.clientY}px`;
+                contextMenu.style.display = 'block';
+            } else {
+                hideContextMenu();
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
+                hideContextMenu();
+            }
+        });
+
+        unsubscribeItem.addEventListener('click', async () => {
+            if (!contextMenuChatId) {
+                hideContextMenu();
+                return;
+            }
+            
+            if (activeChatId === contextMenuChatId) {
+                activeChatId = null;
+                chatIframe.src = '';
+                chatIframe.style.display = 'none';
+                placeholder.classList.remove('hidden');
+                history.pushState(null, '', window.location.pathname);
+            }
+
+            try {
+                const response = await fetch('components/php/unsubscribe_chat.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `chat_id=${contextMenuChatId}`
+                });
+                
+                const result = await response.json();
+
+                if (result.success) {
+                    const itemToRemove = document.querySelector(`.chat-list-item[data-chat-id="${contextMenuChatId}"]`);
+                    if (itemToRemove) {
+                        itemToRemove.remove();
+                    }
+                    
+                    if (chatListContainer && chatListContainer.children.length === 0) {
+                         if (!noChatsMessage) {
+                            const newP = document.createElement('p');
+                            newP.id = 'noChatsMessage';
+                            newP.className = 'p-4 text-center text-gray-500';
+                            newP.textContent = 'У вас пока нет чатов.';
+                            document.querySelector('.selection-container').appendChild(newP);
+                        }
+                    }
+
+                } else {
+                    console.error('Ошибка при отписке:', result.message);
+                }
+            } catch (error) {
+                console.error('Сетевая ошибка при отписке:', error);
+            }
+
+            hideContextMenu();
+        });
+
+
         window.addEventListener('message', (event) => {
             if (event.data === 'CHAT_CLOSE_REQUEST' && !mediaQuery.matches) {
                 
@@ -195,7 +283,7 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
                 
                 history.pushState(null, '', window.location.pathname);
 
-                chatLinks.forEach(link => link.classList.remove('active'));
+                document.querySelectorAll('.chat-link').forEach(link => link.classList.remove('active'));
             }
         }, false);
         
@@ -207,7 +295,23 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
                 setActiveContent(initialUrl, initialChatId); 
             }
         } 
-        
+
+        function handleMediaQueryChange(e) {
+            if (e.matches) {
+                chatSidebar.style.display = 'block';
+                chatMainArea.style.display = 'flex';
+                bottomNav.style.display = 'flex';
+            } else if (activeChatId) {
+                chatSidebar.style.display = 'none';
+                chatMainArea.style.display = 'flex';
+                bottomNav.style.display = 'none';
+            } else {
+                chatSidebar.style.display = 'block';
+                chatMainArea.style.display = 'none';
+                bottomNav.style.display = 'flex';
+            }
+        }
+
         handleMediaQueryChange(mediaQuery);
         mediaQuery.addListener(handleMediaQueryChange);
     });

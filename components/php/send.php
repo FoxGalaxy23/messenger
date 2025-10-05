@@ -2,6 +2,8 @@
 session_start();
 include 'db_connect.php';
 
+header('Content-Type: application/json');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Method Not Allowed']);
@@ -17,6 +19,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = (int)$_SESSION['user_id'];
 $chat_id = isset($_POST['chat_id']) ? (int)$_POST['chat_id'] : 0;
 $message_text = isset($_POST['message']) ? trim($_POST['message']) : '';
+$reply_to = isset($_POST['reply_to']) && is_numeric($_POST['reply_to']) ? (int)$_POST['reply_to'] : null;
 
 if ($chat_id <= 0) {
     http_response_code(400);
@@ -58,15 +61,66 @@ if (empty($message_text) && !$hasFiles) {
 
 $docroot = rtrim($_SERVER['DOCUMENT_ROOT'], '/');
 $upload_base_dir = $docroot . '/uploads/chats/' . $chat_id . '/';
-
 $public_base = '/uploads/chats/' . $chat_id . '/';
 
 $conn->begin_transaction();
 try {
-    $sql_msg = "INSERT INTO messages (user_id, chat_id, message) VALUES (?, ?, ?)";
-    $stmt_msg = $conn->prepare($sql_msg);
-    if (!$stmt_msg) throw new Exception("Prepare message failed: " . $conn->error);
-    $stmt_msg->bind_param('iis', $user_id, $chat_id, $message_text);
+    $reply_snapshot_json = null;
+    if ($reply_to) {
+        $sql_parent = "SELECT m.id AS message_id, m.user_id, m.message, m.post_date, u.username
+                       FROM messages m
+                       LEFT JOIN users u ON u.user_id = m.user_id
+                       WHERE m.id = ? LIMIT 1";
+        $stmt_parent = $conn->prepare($sql_parent);
+        if (!$stmt_parent) throw new Exception("Prepare parent failed: " . $conn->error);
+        $stmt_parent->bind_param("i", $reply_to);
+        if (!$stmt_parent->execute()) throw new Exception("Execute parent failed: " . $stmt_parent->error);
+        $res_parent = $stmt_parent->get_result();
+        if ($res_parent && $res_parent->num_rows > 0) {
+            $parent = $res_parent->fetch_assoc();
+            $sql_parent_media = "SELECT file_path, file_type FROM message_media WHERE message_id = ? AND is_deleted = 0";
+            $stmt_pm = $conn->prepare($sql_parent_media);
+            if ($stmt_pm) {
+                $stmt_pm->bind_param("i", $reply_to);
+                $stmt_pm->execute();
+                $res_pm = $stmt_pm->get_result();
+                $parent_media = [];
+                if ($res_pm) {
+                    while ($mr = $res_pm->fetch_assoc()) {
+                        $parent_media[] = ['path' => $mr['file_path'], 'type' => $mr['file_type']];
+                    }
+                }
+                $stmt_pm->close();
+            } else {
+                $parent_media = [];
+            }
+
+            $parent_message_short = mb_substr($parent['message'] ?? '', 0, 300);
+            $snapshot = [
+                'message_id' => (int)$parent['message_id'],
+                'user_id' => (int)$parent['user_id'],
+                'username' => $parent['username'] ?? '',
+                'message' => $parent_message_short,
+                'media' => $parent_media,
+                'created_at' => $parent['post_date'] ?? null
+            ];
+            $reply_snapshot_json = json_encode($snapshot, JSON_UNESCAPED_UNICODE);
+        }
+        $stmt_parent->close();
+    }
+
+    if ($reply_to && $reply_snapshot_json !== null) {
+        $sql_msg = "INSERT INTO messages (user_id, chat_id, message, reply_to, reply_snapshot) VALUES (?, ?, ?, ?, ?)";
+        $stmt_msg = $conn->prepare($sql_msg);
+        if (!$stmt_msg) throw new Exception("Prepare message failed: " . $conn->error);
+        $stmt_msg->bind_param('iisis', $user_id, $chat_id, $message_text, $reply_to, $reply_snapshot_json);
+    } else {
+        $sql_msg = "INSERT INTO messages (user_id, chat_id, message) VALUES (?, ?, ?)";
+        $stmt_msg = $conn->prepare($sql_msg);
+        if (!$stmt_msg) throw new Exception("Prepare message failed: " . $conn->error);
+        $stmt_msg->bind_param('iis', $user_id, $chat_id, $message_text);
+    }
+
     if (!$stmt_msg->execute()) throw new Exception("Execute message failed: " . $stmt_msg->error);
     $message_id = $conn->insert_id;
     $stmt_msg->close();

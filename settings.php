@@ -14,7 +14,7 @@ $error = '';
 $success = '';
 $current_user = [];
 
-$target_dir = "components/media/user_avatars/"; 
+$target_dir = "uploads/user_avatars/default.png"; 
 $default_avatar_url = 'components/media/images/user.png'; 
 
 if (!is_dir($target_dir)) {

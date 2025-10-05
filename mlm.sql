@@ -22,7 +22,7 @@ CREATE TABLE `chat_bans` (
   `ban_reason` varchar(255) DEFAULT NULL,
   `ban_start_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ban_end_date` datetime DEFAULT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT '1'
+  `is_active` tinyint(1) DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `messages` (
@@ -30,7 +30,9 @@ CREATE TABLE `messages` (
   `user_id` int UNSIGNED NOT NULL,
   `chat_id` int UNSIGNED NOT NULL,
   `message` text NOT NULL,
-  `post_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+  `post_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `reply_to` int DEFAULT NULL,
+  `reply_snapshot` json DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `message_media` (
@@ -61,7 +63,8 @@ CREATE TABLE `user_bans` (
 
 CREATE TABLE `user_chats` (
   `user_id` int UNSIGNED NOT NULL,
-  `chat_id` int UNSIGNED NOT NULL
+  `chat_id` int UNSIGNED NOT NULL,
+  `is_admin` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 
@@ -78,7 +81,8 @@ ALTER TABLE `chat_bans`
 ALTER TABLE `messages`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`),
-  ADD KEY `chat_id` (`chat_id`);
+  ADD KEY `chat_id` (`chat_id`),
+  ADD KEY `reply_to` (`reply_to`);
 
 ALTER TABLE `message_media`
   ADD PRIMARY KEY (`id`),

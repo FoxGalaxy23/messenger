@@ -113,7 +113,7 @@
         #bottomNav {
             width: 100%;
             background-color: #ffffff;
-            border-top: 1px solid #e0e0e0;
+            border-top: 0px solid #e0e0e0;
             box-shadow: 0 0px 0px rgba(0, 0, 0, 0.05);
             z-index: 30;
             padding: 0rem 0;
@@ -239,3 +239,4 @@
             scrollbar-width: none; /* Firefox */
             -ms-overflow-style: none; /* IE 10+ */
         }
+        
