@@ -1,5 +1,8 @@
 <?php
+session_start();
+
 include 'components/php/db_connect.php'; 
+
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -32,6 +35,44 @@ if ($result_check->num_rows === 0) {
     header("Location: invite.php?chat_id={$chat_id}");
     exit(); 
 }
+
+$is_chat_banned = false;
+$chat_ban_details = [];
+
+$ban_sql = "
+    SELECT 
+        cb.ban_reason, 
+        cb.ban_end_date,
+        u.username AS banner_username -- Получаем имя того, кто забанил
+    FROM 
+        chat_bans cb
+    JOIN 
+        users u ON cb.banner_user_id = u.user_id
+    WHERE 
+        cb.banned_user_id = ? 
+        AND cb.chat_id = ? 
+        AND cb.is_active = 1 
+        AND (cb.ban_end_date IS NULL OR cb.ban_end_date > NOW()) -- Бан активен и не истек
+    LIMIT 1
+";
+
+$ban_stmt = $conn->prepare($ban_sql);
+$ban_stmt->bind_param("ii", $current_user_id, $chat_id);
+$ban_stmt->execute();
+$ban_result = $ban_stmt->get_result();
+
+if ($ban_result->num_rows > 0) {
+    $is_chat_banned = true;
+    $chat_ban_details = $ban_result->fetch_assoc();
+    
+    $end_date_raw = $chat_ban_details['ban_end_date'];
+    if ($end_date_raw) {
+        $chat_ban_details['end_date_display'] = date('d.m.Y H:i:s', strtotime($end_date_raw));
+    } else {
+        $chat_ban_details['end_date_display'] = 'Навсегда';
+    }
+}
+
 
 $sql_details = "
     SELECT 
@@ -69,40 +110,64 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat: <?php echo htmlspecialchars($chat_name); ?></title>
     <link rel="stylesheet" type="text/css" href="components/css/style.css">
+    <style>
+        body{
+            background: #23272b;
+        }
+    </style>
     </head>
 <body>
-
+    <div id="chatSidebar" class="chat-sidebar1" style='background-color: #23272b; border-bottom: 1px solid #23272b; position: fixed; top: 0; z-index: 20; margin-right: 5vh;'>
+        
+        <header>
+            <h3>
+                <img src="<?php echo $chat_avatar; ?>" alt="Avatar" class="chat-avatar-small" style='width: 30px; height: 30px; object-fit: cover; border-radius: 20%; vertical-align: middle; margin-right: 10px;'>
+                <span><?php echo $chat_name; ?></span>
+            </h3>
+        </header>
+</div>
+<?php if (!$is_chat_banned): ?>
 <div class="chat-container">
-    <header class="chat-header">
-        <h1>
-            <img style='width: 5vh; height: 5vh; border-radius: 20%;' 
-                 src="<?php echo $chat_avatar; ?>" 
-                 alt="<?php echo $chat_name; ?>" 
-                 class="chat-header-avatar">
-            
-            <?php echo $chat_name; ?>
-            
-            <small style='font-size: 0.5em; color: #888; margin-left: 10px; display: inline-block;'>(<?php echo $participant_count; ?> уч.)</small>
-        </h1>
-    </header>
 
     <div id="messages-display" class="messages-display">
+        <div style='margin-top: 10vh;
+    font-size: 0.4em;
+    text-align: center;
+    margin-left: 15%;
+    margin-right: 15%;
+    margin-bottom: 2vh;'><h1 style="background-color: gray; border-radius: 3px;">This is the beginning of the story</h1></div>
         </div>
     <div style='margin-bottom: 10vh;'></div>
-
     <div class="chat-input-area" style='background: white;'>
         <form id="chat-form" class="chat-form">
             
             <label for="media-input" class="media-upload-label" style='cursor: pointer; padding: 0 10px; font-size: 1.5em;'>🖼️</label>
             <input type="file" id="media-input" name="media_files[]" multiple accept="image/*,video/*" style="display: none;">
             
-            <textarea id="message-input" placeholder="Сообщение..." rows="1" required></textarea>
+            <textarea id="message-input" placeholder="Message" rows="1" required></textarea>
             <button type="submit">›</button> 
         </form>
         <div id="selected-media-preview" class="selected-media-preview" style='padding: 5px 10px; font-size: 0.8em;'></div>
     </div>
 </div>
-
+<?php else: ?>
+    <div class="chat-input-area" style='margin-bottom: 10vh;'></div>
+    
+    <div style='color: white; padding: 15px; text-align: center; border-top: 1px solid #444; margin-top: 10vh;'>
+        <p style='color: #ff5555; font-weight: bold;'>
+            <i class="fas fa-ban"></i> You blocked from this chat.
+        </p>
+        <p style='font-size: 0.9em; margin-top: 5px;'>
+            Reason: <?php echo htmlspecialchars($chat_ban_details['ban_reason'] ?? 'No reason'); ?>
+        </p>
+        <p style='font-size: 0.9em;'>
+            Banned by: <?php echo htmlspecialchars($chat_ban_details['banner_username']); ?>
+        </p>
+        <p style='font-size: 0.9em;'>
+            Ban expires: <?php echo $chat_ban_details['end_date_display']; ?>
+        </p>
+    </div>
+<?php endif; ?>
 <script>
 const chatId = <?php echo $chat_id; ?>;
 const currentUserId = Number(<?php echo $current_user_id; ?>);
@@ -161,7 +226,7 @@ function buildMessageElement(msg) {
             if (media.type.startsWith('image/')) {
                 mediaElement = document.createElement('img');
                 mediaElement.src = path;
-                mediaElement.alt = 'Прикрепленное изображение';
+                mediaElement.alt = 'Pinned image';
                 mediaElement.className = 'chat-media-image';
             } 
             else if (media.type.startsWith('video/')) {
@@ -173,7 +238,7 @@ function buildMessageElement(msg) {
             else {
                 mediaElement = document.createElement('a');
                 mediaElement.href = path;
-                mediaElement.textContent = 'Файл: ' + path.split('/').pop();
+                mediaElement.textContent = 'File: ' + path.split('/').pop();
                 mediaElement.target = '_blank';
                 mediaElement.style.display = 'block';
             }
@@ -246,7 +311,18 @@ function fetchMessages() {
             return resp.json();
         })
         .then(messages => {
-            const existingIds = new Set(Array.from(messagesDisplay.children).map(el => String(el.dataset.msgId)));
+            if (firstLoad) {
+                messagesDisplay.innerHTML = `<div style='margin-top: 10vh;
+                    font-size: 0.4em;
+                    text-align: center;
+                    margin-left: 15%;
+                    margin-right: 15%;
+                    margin-bottom: 2vh;'>
+                    <h1 style="background-color: gray; border-radius: 3px;">This is the beginning of the story</h1>
+                </div>`;
+                firstLoad = false;
+            }
+            const existingIds = new Set(Array.from(messagesDisplay.children).map(el => String(el.dataset?.msgId)));
             const fragment = document.createDocumentFragment();
             let added = false;
 
@@ -263,7 +339,7 @@ function fetchMessages() {
             }
         })
         .catch(err => {
-            console.error('Ошибка при получении сообщений:', err);
+            console.error('Error fetching messages:', err);
         })
         .finally(() => {
             isFetching = false;
@@ -278,7 +354,7 @@ mediaInput.addEventListener('change', function() {
         const totalSize = Array.from(this.files).reduce((sum, file) => sum + file.size, 0);
 
         const previewText = document.createElement('span');
-        previewText.textContent = `Выбрано: ${count} файл(а/ов) (${(totalSize / 1024 / 1024).toFixed(2)} МБ)`;
+        previewText.textContent = `Selected: ${count} file(s) (${(totalSize / 1024 / 1024).toFixed(2)} MB)`;
         
         const clearButton = document.createElement('button');
         clearButton.textContent = '✖';
@@ -325,13 +401,14 @@ chatForm.addEventListener('submit', function(e) {
             messageInput.style.height = '';
             mediaInput.value = null;
             selectedMediaPreview.innerHTML = '';
+            firstLoad = true;
             fetchMessages(); 
         } else {
-            console.error('Ошибка отправки:', data.message || data);
+            console.error('Error sending message:', data.message || data);
         }
     })
     .catch(err => {
-        console.error('Ошибка AJAX:', err);
+        console.error('AJAX error:', err);
     });
 });
 
@@ -349,6 +426,5 @@ fetchMessages();
 scrollToBottomReliable();
 setInterval(() => { if (!isFetching) fetchMessages(); }, pollInterval);
 </script>
-
 </body>
 </html>

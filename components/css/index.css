@@ -1,0 +1,241 @@
+/* Установка шрифта Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh; 
+            width: 100vw;
+            overflow: hidden;
+            background-color: #f7f9fb;
+            color: #222;
+        }
+        
+        .desktop-layout {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+        }
+
+        .chat-sidebar {
+            width: 100%;
+            min-width: 280px;
+            max-width: 400px;
+            border-right: 1px solid #e0e0e0;
+            flex-shrink: 0;
+            overflow-y: auto;
+            background-color: #f7f9fb;
+            z-index: 10;
+        }
+
+        .chat-sidebar1 {
+            width: 100%;
+            min-width: 280px;
+            border-right: 1px solid #e0e0e0;
+            flex-shrink: 0;
+            overflow-y: auto;
+            background-color: #f7f9fb;
+            z-index: 10;
+        }
+        
+        .chat-main-area {
+            flex-grow: 1;
+            display: flex; 
+            flex-direction: column;
+            background-color: #ffffff;
+            width: 100vw; 
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 20;
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .chat-main-area {
+            display: flex !important;
+            position: relative;
+            width: auto;
+            }
+            /* На ПК нужно уменьшить высоту сайдбара, чтобы освободить место для панели */
+            /* На ПК сайдбар должен быть над панелью */
+            #chatSidebar {
+                display: flex; /* Чтобы footer был внизу сайдбара, а не всей страницы */
+                flex-direction: column;
+            }
+            .selection-container {
+                flex-grow: 1; /* Чтобы список чатов занимал все доступное место */
+                overflow-y: auto; /* Для прокрутки списка чатов */
+            }
+        }
+        
+        .chat-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            text-decoration: none; 
+            color: #333;
+        }
+        .chat-item:hover {
+            background-color: #e5f1ff; 
+        }
+        .chat-item.active {
+            background-color: #d1e5ff; 
+            font-weight: 600;
+        }
+        .chat-list-avatar {
+            width: 40px; 
+            height: 40px; 
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .chat-name-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+
+        /* Изначально панель скрыта для всех, кроме тех, где это явно нужно (мобильные) */
+        #bottomNav {
+            width: 100%;
+            background-color: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            box-shadow: 0 0px 0px rgba(0, 0, 0, 0.05);
+            z-index: 30;
+            padding: 0rem 0;
+        }
+        
+        /* На мобильных: фиксируем внизу экрана */
+        @media (max-width: 767px) {
+            #bottomNav {
+                position: fixed;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+            }
+            .chat-sidebar {
+                padding-bottom: 70px; 
+            }
+            .chat-sidebar1 {
+                padding-bottom: 70px; 
+            }
+        }
+
+        /* На ПК: абсолютное позиционирование внутри сайдбара */
+        @media (min-width: 768px) {
+            #bottomNav {
+                display: flex !important;
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                border-top: 0px solid #e0e0e0;
+                box-shadow: none;
+                flex-shrink: 0;
+            }
+            #chatSidebar {
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+            .selection-container {
+                flex-grow: 1;
+                overflow-y: auto;
+            }
+        }
+        
+        /* --- ТЁМНАЯ ТЕМА --- */
+        @media (prefers-color-scheme: dark) {
+            body {
+            background-color: #181c20;
+            color: #e2e6ea;
+            }
+            .desktop-layout {
+            background-color: #181c20;
+            }
+            .chat-sidebar {
+            background-color: #23272b;
+            border-right: 1px solid #23272b;
+            }
+            .chat-sidebar1 {
+            background-color: #23272b;
+            border-right: 1px solid #23272b;
+            }
+            .chat-main-area {
+            background-color: #23272b;
+            }
+            .chat-item {
+            color: #e2e6ea;
+            }
+            .chat-item:hover {
+            background-color: #283040;
+            }
+            .chat-item.active {
+            background-color: #2d3748;
+            color: #fff;
+            }
+            .chat-list-avatar {
+            box-shadow: 0 0 0 2px #23272b;
+            }
+            /* ОБНОВЛЕНИЕ ДЛЯ ТЕМНОЙ ТЕМЫ */
+            #bottomNav {
+            background-color: #23272b;
+            border-top: 0px solid #23272b;
+            }
+            #bottomNav.desktop-nav {
+                border-top: 0px solid #3d4246; /* Более темный разделитель */
+                box-shadow: none;
+            }
+            .welcome-placeholder {
+            background-color: #181c20 !important;
+            color: #a0aec0 !important;
+            }
+        }
+        header.bg-white {
+            background-color: #23272b !important;
+            border-bottom: 0px solid #3d4246 !important;
+        }
+        .text-gray-800 {
+            color: #e2e6ea !important;
+        }
+        .text-gray-500 {
+            color: #a0aec0 !important;
+        }
+
+        .welcome-page{
+            margin-bottom: 100%;
+        }
+        .welcome-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #6b7280; /* Серый цвет текста */
+            font-size: 1.25rem; /* Размер шрифта */
+            padding: 20px;
+        }
+        
+        /* Скрыть скроллбар для chat-sidebar, selection-container, chat-list, chat-main-area */
+        .chat-sidebar,
+        .selection-container,
+        .chat-list,
+        .chat-main-area {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE 10+ */
+        }

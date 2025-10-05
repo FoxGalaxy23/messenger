@@ -1,5 +1,5 @@
 :root {
-    --tg-blue: #007AFF; /* Основной цвет (Telegram Blue) */
+    --tg-blue: #6366f1; /* Основной цвет (Telegram Blue) */
     --bg-light: #f6f6f6; /* Светлый фон */
     --bg-darker: #e5e5e5; /* Фон для инпута */
     --bubble-self: #D9F7C5; /* Цвет своего сообщения (легкий зеленый - НЕ ИСПОЛЬЗУЕТСЯ в финальной версии, но оставлен в переменной) */
@@ -18,44 +18,6 @@ body {
     color: var(--text-dark);
 }
 
-/*
-======================================
-ШАПКА ЧАТА (HEADER)
-======================================
-*/
-.chat-header {
-    background-color: var(--tg-blue);
-    color: white;
-    padding: 12px 16px; 
-    box-shadow: 0 0.5px 0.5px rgba(0,0,0,0.2); /* Легкая тень */
-    flex-shrink: 0; /* Не сжимается */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky; /* Добавлено, но лучше использовать flex-layout */
-    top: 0;
-    z-index: 10; /* На всякий случай */
-}
-.chat-header h1 {
-    margin: 0;
-    font-size: 1.15em; 
-    font-weight: 600; /* Полужирный */
-}
-.chat-header a {
-    color: white;
-    text-decoration: none;
-    font-size: 0.9em;
-    font-weight: 400;
-    transition: opacity 0.2s;
-}
-.chat-header a:hover {
-    opacity: 0.8;
-}
-/*
-======================================
-ОБЛАСТЬ СООБЩЕНИЙ
-======================================
-*/
 #messages-display { 
     flex-grow: 1;
     overflow-y: auto;
@@ -134,8 +96,7 @@ body {
 */
 .chat-input-area {
     padding: 8px 15px 12px; /* Увеличил нижний отступ для мобильных устройств */
-    border-top: 1px solid var(--border-color);
-    background-color: var(--bg-input); /* Фон белый */
+    border-top: 0px solid var(--border-color);
     flex-shrink: 0; /* Не сжимается */
     position: sticky; /* Добавлено, но лучше использовать flex-layout */
     bottom: 0;
@@ -150,7 +111,7 @@ body {
     min-height: 20px;
     max-height: 80px; /* Немного уменьшил максимальную высоту */
     padding: 10px 12px;
-    border: 1px solid var(--border-color);
+    border: 0px solid var(--border-color);
     margin-right: 10px;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -160,7 +121,7 @@ body {
 }
 #message-input:focus {
     border-color: var(--tg-blue);
-    box-shadow: 0 0 0 1px var(--tg-blue);
+    box-shadow: 0 0 0 0px var(--tg-blue);
 }
 /* Скрываем скроллбар для textarea, если она становится большой */
 #message-input::-webkit-scrollbar {
@@ -216,21 +177,21 @@ body {
     }
 
     .chat-input-area {
-        padding: 12px 25px 15px; 
+
     }
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --tg-blue: #3391ff;
-        --bg-light: #181a20;
-        --bg-darker: #23262f;
+        --tg-blue: #6366f1;
+        --bg-light: #23272b;
+        --bg-darker: #181c20;
         --bubble-self: #2c3e2f;
         --bubble-other: #23262f;
         --text-dark: #eaeaea;
         --text-meta: #a0a0a0;
         --border-color: #333a45;
-        --bg-input: #23262f;
+        --bg-input: #23272b;
     }
     body {
         background-color: var(--bg-light);
@@ -502,13 +463,13 @@ body {
 
 /* САМО ОБЛАЧКО (текст и время внутри) */
 .message-bubble {
-    background-color: #007bff; /* Светлый фон для чужих */
+    background-color: #6366f1; /* Светлый фон для чужих */
     padding: 8px 12px;
     word-wrap: break-word;
     margin: 0; 
 }
 .message.self .message-bubble {
-    background-color: #007bff; /* Синий фон для своих */
+    background-color: #6366f1; /* Синий фон для своих */
     color: white;
 }
 
@@ -556,7 +517,6 @@ body {
 }
 
 .invite-container {
-    max-width: 400px;
     margin: 50px auto;
     padding: 20px;
     background: rgba(0, 0, 0, 0.47);
@@ -627,7 +587,6 @@ body {
     left: 0;         /* Прижимаем к левому краю */
     width: 100%;     /* Растягиваем на всю ширину */
     background: white; 
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* Добавляем тень сверху для отделения */
     padding: 10px 0; /* Немного вертикального отступа */
     z-index: 1000;   /* Гарантируем, что будет поверх остального контента */
 }
@@ -652,3 +611,50 @@ body {
 }
 
 /* ============================================================= */
+        .chat-sidebar1 {
+            width: 100%;
+            min-width: 280px;
+            border-right: 1px solid #e0e0e0;
+            flex-shrink: 0;
+            overflow-y: auto;
+            background-color: #f7f9fb;
+            z-index: 10;
+        }
+
+.story-start{
+    text-align: center;
+    color: var(--white);
+    font-style: italic;
+    margin-bottom: 10vh;
+}
+
+/* Скрыть скроллбар для chat-sidebar1, messages-display, chat-list, selection-container */
+.chat-sidebar1,
+#messages-display,
+.chat-list,
+.selection-container {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+}
+.chat-sidebar1::-webkit-scrollbar,
+#messages-display::-webkit-scrollbar,
+.chat-list::-webkit-scrollbar,
+.selection-container::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* Для браузеров, основанных на WebKit (Chrome, Safari, Opera) */
+body::-webkit-scrollbar {
+    display: none; /* Скрывает сам скроллбар */
+}
+
+/* Для IE и Edge */
+body {
+    -ms-overflow-style: none; /* Скрывает полосу прокрутки в IE и Edge */
+}
+
+/* Для Firefox */
+body {
+    scrollbar-width: none; /* Скрывает полосу прокрутки в Firefox */
+}

@@ -40,12 +40,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="components/css/style.css"> 
+    <link rel="stylesheet" type="text/css" href="components/css/login.css">
 </head>
 <body>
-    <header class="chat-header">
-        <h1>Login</h1>
-    </header>
-    <div class="selection-container">
+    <div class='logreg-container'>
+        <div class='headlogin'>
+            <img src="<?php echo $logo; ?>" alt="">
+        </div>
+        <div class="selection-container">
         <h2>Login to your account</h2>
         <h3>Welcome back!</h3>
 
@@ -64,6 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <p class="back-link-area">
             No account? <a href="register.php" class="action-link">Register</a>
         </p>
+    </div>
     </div>
 </body>
 </html>

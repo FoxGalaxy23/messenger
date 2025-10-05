@@ -8,7 +8,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Авторизация
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['status' => 'error', 'message' => 'Not logged in.']);
@@ -25,9 +24,8 @@ if ($chat_id <= 0) {
     exit();
 }
 
-// Ограничения
 $MAX_FILES = 5;
-$MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB per file
+$MAX_FILE_SIZE = 10 * 1024 * 1024;
 $ALLOWED_EXT = [
     'jpg','jpeg','png','gif','webp','mp4','webm','mov','pdf','txt','mp3'
 ];
@@ -109,7 +107,6 @@ try {
                 error_log("Warning: MIME type '{$type}' for file '{$orig_name}' is not in allowed list");
             }
 
-            // уникальное имя
             $unique_name = bin2hex(random_bytes(8)) . '.' . $ext;
             $dest_path = $upload_base_dir . $unique_name;
             $public_path = $public_base . $unique_name;

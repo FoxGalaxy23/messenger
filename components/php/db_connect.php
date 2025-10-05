@@ -1,9 +1,5 @@
 <?php
-$servername = "localhost"; 
-$username = "root";
-$password = "";
-$dbname = "mlm";
-
+include 'config.php';
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
@@ -11,6 +7,7 @@ if ($conn->connect_error) {
 }
 
 $conn->set_charset("utf8mb4");
+
 session_start();
 
 function check_login() {
@@ -18,5 +15,12 @@ function check_login() {
         header("Location: login.php");
         exit();
     }
+}
+
+$userAgent = $_SERVER['HTTP_USER_AGENT'];
+
+if (stripos($userAgent, 'Chromium') === false && stripos($userAgent, 'Chrome') === false) {
+    header('Location: /components/pages/agent_error.php');
+    exit;
 }
 ?>
