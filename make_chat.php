@@ -155,4 +155,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
         </form>
     </div>
 </body>
+<noscript>
+    <meta http-equiv="refresh" content="0; url=/components/pages/js.php">
+</noscript>
 </html>

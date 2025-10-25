@@ -100,4 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $step === 2) {
         </div>
     </div>
 </body>
+<noscript>
+    <meta http-equiv="refresh" content="0; url=/components/pages/js.php">
+</noscript>
 </html>

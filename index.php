@@ -316,6 +316,8 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
         mediaQuery.addListener(handleMediaQueryChange);
     });
 </script>
-
+<noscript>
+    <meta http-equiv="refresh" content="0; url=/components/pages/js.php">
+</noscript>
 </body>
 </html>

@@ -165,7 +165,7 @@ $conn->close();
 <header>
     <h3>
         <img src="<?php echo $chat_avatar; ?>" alt="Avatar" class="chat-avatar-small" style='width: 30px; height: 30px; object-fit: cover; border-radius: 20%; vertical-align: middle; margin-right: 10px;'>
-        <span><?php echo $chat_name; ?> (<?php echo $participant_count; ?> memebers.)</span>
+        <span><?php echo $chat_name; ?> (<?php echo $participant_count; ?> memebers.)<div id="typingArea" style="color:#69c3ff;min-height:1px;font-size: 1.00rem;"></div></span>
     </h3>
 </header>
 </div>
@@ -950,5 +950,150 @@ scrollToBottomReliable();
 setInterval(() => { if (!isFetching) fetchMessages(); }, pollInterval);
 </script>
 
+
+<!-- TYPING-INTEGRATION-INSERTION -->
+<!-- Typing integration UI (added by assistant) -->
+
+<script>
+(function(){
+  // Минимальная интеграция индикатора набора текста (сначала WebSocket, затем Fallback)
+  const STOP_DELAY = 3000; // ms
+  // Берем ID чата и имя пользователя из переменных основного скрипта chat.php
+  const CHAT_ID = String(<?php echo $chat_id; ?>);
+  const USERNAME = '<?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>';
+
+  // Находим поле ввода
+  const input = document.getElementById('message-input'); // Используем ID поля ввода из chat.php
+  const typingArea = document.getElementById('typingArea');
+
+  // Выбираем схему websocket
+  const wsScheme = (location.protocol === 'https:') ? 'wss' : 'ws';
+  const wsHost = location.hostname;
+  const wsPort = 8080; // порт вашего Ratchet сервера
+  const WS_URL = wsScheme + '://' + wsHost + ':' + wsPort + '/ws?chat_id=' + encodeURIComponent(CHAT_ID) + '&user=' + encodeURIComponent(USERNAME);
+
+  let ws = null;
+  let isTyping = false;
+  let stopTimer = null;
+
+  function startWebSocket() {
+    try {
+      ws = new WebSocket(WS_URL);
+    } catch (e) {
+      console.warn('WS creation failed', e);
+      ws = null;
+      return;
+    }
+    ws.addEventListener('open', function(){ console.log('Typing WS open'); });
+    ws.addEventListener('message', function(ev){
+      try {
+        const data = JSON.parse(ev.data);
+        // Проверяем, чтобы не отображать свой же статус
+        if (data.user === USERNAME) return; 
+
+        if (data.type === 'typing') {
+          // Если кто-то печатает, отображаем его имя
+          typingArea.textContent = data.user + ' печатает...';
+        } else if (data.type === 'stop_typing') {
+          // Когда прекращает, очищаем
+          typingArea.textContent = '';
+        }
+      } catch(e) { console.error('Typing WS parse error', e); }
+    });
+    // Повторное подключение при закрытии или ошибке
+    ws.addEventListener('close', function(){ console.log('Typing WS closed. Retrying...'); ws = null; setTimeout(startWebSocket, 5000); });
+    ws.addEventListener('error', function(){ console.warn('Typing WS error'); ws = null; });
+  }
+
+  // ... (Остальной код функций отправки WS и Fallback остается прежним) ...
+
+  function sendTypingWS() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+    // Отправляем тип события, ID чата и реальное имя пользователя
+    ws.send(JSON.stringify({type:'typing', chat_id: CHAT_ID, user: USERNAME}));
+    return true;
+  }
+  function sendStopTypingWS() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+    ws.send(JSON.stringify({type:'stop_typing', chat_id: CHAT_ID, user: USERNAME}));
+    return true;
+  }
+
+  // Fallback endpoints (пути к вашим файлам)
+  const typingUpdateUrl = 'typing_update.php'; // Убедитесь, что это правильный путь
+  const typingGetUrl = 'typing_get.php'; // Убедитесь, что это правильный путь
+
+  function sendTypingFallback() {
+    const url = typingUpdateUrl + '?chat_id=' + encodeURIComponent(CHAT_ID) + '&user=' + encodeURIComponent(USERNAME) + '&type=typing';
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url);
+    } else {
+      fetch(url).catch(()=>{});
+    }
+  }
+  function sendStopTypingFallback() {
+    const url = typingUpdateUrl + '?chat_id=' + encodeURIComponent(CHAT_ID) + '&user=' + encodeURIComponent(USERNAME) + '&type=stop';
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url);
+    } else {
+      fetch(url).catch(()=>{});
+    }
+  }
+
+  // Polling для получения печатающих пользователей (fallback)
+  function startPolling() {
+    setInterval(function(){
+      fetch(typingGetUrl + '?chat_id=' + encodeURIComponent(CHAT_ID)).then(r=>r.json()).then(data=>{
+        if (data.typing && data.typing.length) {
+          // Фильтруем самого себя, чтобы не показывать, что "ты печатаешь"
+          const othersTyping = data.typing.filter(user => user !== USERNAME);
+          if (othersTyping.length) {
+              typingArea.textContent = othersTyping.join(', ') + ' печатает...';
+          } else {
+              typingArea.textContent = '';
+          }
+        } else {
+          typingArea.textContent = '';
+        }
+      }).catch(()=>{});
+    }, 1000);
+  }
+
+  // Привязка к событиям ввода
+  function attachInputHandlers() {
+    if (!input) {
+      console.warn('No message input found for typing integration.');
+      return;
+    }
+    input.addEventListener('input', function(){
+      if (!isTyping) {
+        isTyping = true;
+        // пытаемся WS, иначе fallback
+        if (!sendTypingWS()) sendTypingFallback();
+      }
+      clearTimeout(stopTimer);
+      stopTimer = setTimeout(function(){
+        isTyping = false;
+        if (!sendStopTypingWS()) sendStopTypingFallback();
+      }, STOP_DELAY);
+    });
+    // при уходе фокуса, отправляем stop немедленно
+    input.addEventListener('blur', function(){
+      if (isTyping) {
+        isTyping = false;
+        if (!sendStopTypingWS()) sendStopTypingFallback();
+      }
+    });
+  }
+
+  // Инициализация
+  startWebSocket();
+  attachInputHandlers();
+  startPolling(); // Fallback-опрос (можно отключить, если вы уверены в WS)
+})();
+</script>
+<noscript>
+    <meta http-equiv="refresh" content="0; url=/components/pages/js.php">
+</noscript>
 </body>
 </html>

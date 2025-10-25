@@ -102,6 +102,8 @@ $conn->close();
     
     <a href="index.php" class="back-link">Back to chat list</a>
 </div>
-
+<noscript>
+    <meta http-equiv="refresh" content="0; url=/components/pages/js.php">
+</noscript>
 </body>
 </html>

@@ -189,4 +189,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
         <a href="components/pages/info.php" class="action-link">Info page</a>
     </div>
 </body>
+<noscript>
+    <meta http-equiv="refresh" content="0; url=/components/pages/js.php">
+</noscript>
 </html>
