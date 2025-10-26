@@ -1,4 +1,5 @@
 <?php
+// make_chat.php
 include 'components/php/db_connect.php';
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
@@ -35,6 +36,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
 
     $chat_name = trim($_POST['chat_name']);
     $avatar_url = $default_avatar_url; 
+    // НОВОЕ: Получаем статус приватности. Если чекбокс отмечен, будет 'on', иначе - не передастся.
+    $is_private = isset($_POST['is_private']) ? 1 : 0; 
 
     if (!empty($chat_name)) {
         
@@ -82,9 +85,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
             if ($stmt_check->num_rows == 0) {
                 $stmt_check->close();
 
-                $sql_insert_chat = "INSERT INTO chats (chat_name, avatar_url) VALUES (?, ?)";
+                // ИЗМЕНЕНИЕ SQL: Добавлен is_private
+                $sql_insert_chat = "INSERT INTO chats (chat_name, avatar_url, is_private) VALUES (?, ?, ?)";
                 $stmt_insert_chat = $conn->prepare($sql_insert_chat);
-                $stmt_insert_chat->bind_param("ss", $chat_name, $avatar_url);
+                // ИЗМЕНЕНИЕ BIND: Добавлен int-параметр для is_private
+                $stmt_insert_chat->bind_param("ssi", $chat_name, $avatar_url, $is_private); 
                 
                 if ($stmt_insert_chat->execute()) {
                     $new_chat_id = $conn->insert_id; 
@@ -128,6 +133,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новый чат</title>
     <link rel="stylesheet" href="components/css/style.css"> 
+    <style>
+        /* Стиль для чекбокса, чтобы он выглядел хорошо */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
     <script>
         if (window.self === window.top) {
             window.location = 'index.php';
@@ -150,7 +164,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
             
             <label for="chat_avatar">Аватар чата (необязательно):</label>
             <input type="file" id="chat_avatar" name="chat_avatar" accept="image/*"><br>
-
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="is_private" name="is_private" value="1">
+                <label for="is_private" style="margin: 0; font-weight: normal;">Сделать чат приватным (вход только по приглашению)</label>
+            </div>
+            
             <button type="submit" class="button-style">Создать чат</button>
         </form>
     </div>

@@ -117,9 +117,8 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
     
 </div>
 
-<!-- Контекстное меню -->
 <div id="contextMenu" class="context-menu">
-    <div id="unsubscribeItem" class="context-menu-item danger">Отписаться</div>
+    <div id="inviteItem" class="context-menu-item">Пригласить в чат</div>     <div id="unsubscribeItem" class="context-menu-item danger">Отписаться</div>
 </div>
 
 <script>
@@ -135,6 +134,7 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
         const mediaQuery = window.matchMedia('(min-width: 768px)');
         const contextMenu = document.getElementById('contextMenu');
         const unsubscribeItem = document.getElementById('unsubscribeItem');
+        const inviteItem = document.getElementById('inviteItem'); // Получаем новый элемент
         const noChatsMessage = document.getElementById('noChatsMessage');
         const chatListContainer = document.querySelector('.chat-list');
 
@@ -142,8 +142,7 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
         let contextMenuChatId = null;
 
         /**
-         * 
-         * @param {string} url
+         *          * @param {string} url
          * @param {string|null} [chatId=null]
          */
         function setActiveContent(url, chatId = null) {
@@ -217,6 +216,18 @@ $initial_chat_id = isset($_GET['chat_id']) && is_numeric($_GET['chat_id']) ? (in
             if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
                 hideContextMenu();
             }
+        });
+        
+        // Новый обработчик для кнопки "Пригласить в чат"
+        inviteItem.addEventListener('click', () => {
+            if (contextMenuChatId) {
+                // Здесь логика для приглашения в чат
+                // Например, перенаправление на страницу приглашения или открытие модального окна.
+                // Предположим, у вас есть страница invite_user.php, которая принимает chat_id
+                const inviteUrl = `invite_user.php?chat_id=${contextMenuChatId}`;
+                setActiveContent(inviteUrl);
+            }
+            hideContextMenu();
         });
 
         unsubscribeItem.addEventListener('click', async () => {

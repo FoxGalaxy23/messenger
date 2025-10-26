@@ -11,7 +11,8 @@ SET time_zone = "+00:00";
 CREATE TABLE `chats` (
   `chat_id` int UNSIGNED NOT NULL,
   `chat_name` varchar(100) NOT NULL,
-  `avatar_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'components/media/images/chat.png'
+  `avatar_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'components/media/images/chat.png',
+  `is_private` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `chat_bans` (
@@ -23,6 +24,16 @@ CREATE TABLE `chat_bans` (
   `ban_start_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ban_end_date` datetime DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `chat_invites` (
+  `invite_id` int UNSIGNED NOT NULL,
+  `chat_id` int UNSIGNED NOT NULL,
+  `invite_code` varchar(64) NOT NULL,
+  `created_by_user_id` int UNSIGNED NOT NULL,
+  `is_used` tinyint(1) NOT NULL DEFAULT '0',
+  `used_by_user_id` int UNSIGNED DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `messages` (
@@ -87,6 +98,12 @@ ALTER TABLE `chat_bans`
   ADD KEY `fk_cb_banned_user` (`banned_user_id`),
   ADD KEY `fk_cb_banner_user` (`banner_user_id`);
 
+ALTER TABLE `chat_invites`
+  ADD PRIMARY KEY (`invite_id`),
+  ADD UNIQUE KEY `idx_invite_code` (`invite_code`),
+  ADD KEY `fk_chat_id_invites` (`chat_id`),
+  ADD KEY `fk_created_by_user` (`created_by_user_id`);
+
 ALTER TABLE `messages`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`),
@@ -124,6 +141,9 @@ ALTER TABLE `chats`
 ALTER TABLE `chat_bans`
   MODIFY `chat_ban_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `chat_invites`
+  MODIFY `invite_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+
 ALTER TABLE `messages`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
@@ -144,6 +164,10 @@ ALTER TABLE `chat_bans`
   ADD CONSTRAINT `fk_cb_banned_user` FOREIGN KEY (`banned_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_cb_banner_user` FOREIGN KEY (`banner_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,
   ADD CONSTRAINT `fk_cb_chat` FOREIGN KEY (`chat_id`) REFERENCES `chats` (`chat_id`) ON DELETE CASCADE;
+
+ALTER TABLE `chat_invites`
+  ADD CONSTRAINT `fk_chat_id_invites` FOREIGN KEY (`chat_id`) REFERENCES `chats` (`chat_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_created_by_user` FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT;
 
 ALTER TABLE `messages`
   ADD CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
