@@ -32,7 +32,8 @@ CREATE TABLE `messages` (
   `message` text NOT NULL,
   `post_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `reply_to` int DEFAULT NULL,
-  `reply_snapshot` json DEFAULT NULL
+  `reply_snapshot` json DEFAULT NULL,
+  `sent_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `message_media` (
@@ -41,6 +42,14 @@ CREATE TABLE `message_media` (
   `file_path` varchar(255) NOT NULL,
   `file_type` varchar(50) NOT NULL,
   `is_deleted` tinyint(1) DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `message_receipts` (
+  `id` int UNSIGNED NOT NULL,
+  `message_id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED NOT NULL,
+  `delivered_at` datetime DEFAULT NULL,
+  `read_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `users` (
@@ -88,6 +97,12 @@ ALTER TABLE `message_media`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_message_id` (`message_id`);
 
+ALTER TABLE `message_receipts`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_message_user` (`message_id`,`user_id`),
+  ADD KEY `idx_message_id` (`message_id`),
+  ADD KEY `idx_user_id` (`user_id`);
+
 ALTER TABLE `users`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `username` (`username`);
@@ -115,6 +130,9 @@ ALTER TABLE `messages`
 ALTER TABLE `message_media`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
+ALTER TABLE `message_receipts`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+
 ALTER TABLE `users`
   MODIFY `user_id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
@@ -133,6 +151,10 @@ ALTER TABLE `messages`
 
 ALTER TABLE `message_media`
   ADD CONSTRAINT `message_media_ibfk_1` FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `message_receipts`
+  ADD CONSTRAINT `fk_receipts_message` FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_receipts_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `user_bans`
   ADD CONSTRAINT `fk_banned_user` FOREIGN KEY (`banned_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
