@@ -193,11 +193,16 @@ try {
             throw new Exception("Слишком много файлов. Максимум: {$MAX_FILES}.");
         }
 
-        $upload_base_dir = __DIR__ . '/../media/uploads/'; // Убедитесь, что эта директория существует и доступна для записи
-        $public_base = 'media/uploads/'; // Путь, который будет использоваться в HTML/браузере
+        // --- ИЗМЕНЕННЫЕ ПУТИ ДЛЯ ОТПРАВКИ В КОРЕНЬ СЕРВЕРА С УЧЕТОМ ID ЧАТА ---
+        // __DIR__ . '/../../' - это поднимет на два уровня выше (предполагая, что send.php в подпапке /api/ или /handlers/)
+        // и создаст путь к папке /uploads/chats/{chat_id}/
+        $upload_base_dir = __DIR__ . '/../../uploads/chats/' . $chat_id . '/'; 
+        // Путь, который будет использоваться в HTML/браузере (от корня сайта)
+        $public_base = '/uploads/chats/' . $chat_id . '/'; 
+        // --- КОНЕЦ ИЗМЕНЕННЫХ ПУТЕЙ ---
         
         if (!is_dir($upload_base_dir) && !mkdir($upload_base_dir, 0755, true)) {
-            throw new Exception("Не удалось создать директорию для загрузки.");
+            throw new Exception("Не удалось создать директорию для загрузки: " . $upload_base_dir);
         }
         
         $sql_insert_media = "
